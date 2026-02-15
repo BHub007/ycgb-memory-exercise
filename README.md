@@ -2,7 +2,7 @@
 
 An interactive brain training tool designed to strengthen working memory and attention - particularly helpful for women experiencing menopause-related cognitive changes.
 
-Created for [youcangetbetter](https://youcangetbetter.substack.com) Substack readers.
+Created for [YouCanGetBetter](https://youcangetbetter.substack.com) Substack readers.
 
 ##  Why This Matters
 
