@@ -2,8 +2,6 @@
 
 An interactive brain training tool designed to strengthen working memory and attention - particularly helpful for women experiencing menopause-related cognitive changes.
 
-Created for [YouCanGetBetter](https://youcangetbetter.substack.com) Substack readers.
-
 ##  Why This Matters
 
 About 60% of women report memory and concentration difficulties during perimenopause and menopause. While hormonal changes are the root cause, research shows that working memory is trainable - regular practice can help maintain cognitive sharpness during this transition.
@@ -49,11 +47,6 @@ This exercise can help maintain and strengthen working memory, but it's not a me
 
 Menopause-related cognitive changes are usually temporary, but ruling out other causes is important.
 
-##  About youcangetbetter
-
-This tool is part of the [YouCanGetBetter Substack](https://youcangetbetter.substack.com), where I share practical, science-based resources for navigating midlife transitions with clarity and confidence.
-
-Subscribe for more tools, insights, and support on your journey through menopause and beyond.
 
 ##  Feedback & Suggestions
 
