@@ -8,55 +8,603 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* ── Progress Tracker — light theme ── */
+
+        #pt-panel { pointer-events: none; }
+        #pt-panel.pt-open { pointer-events: all; }
+
+        .pt-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #pt-panel.pt-open .pt-backdrop { opacity: 1; }
+
+        .pt-drawer {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: min(400px, 100vw);
+            background: #ffffff;
+            border-left: 1px solid #e9d5ff;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+            box-shadow: -8px 0 40px rgba(124,58,237,0.12);
+        }
+        #pt-panel.pt-open .pt-drawer { transform: translateX(0); }
+
+        .pt-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid #f3e8ff;
+            flex-shrink: 0;
+            background: #faf5ff;
+        }
+        .pt-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #581c87;
+            font-family: inherit;
+            letter-spacing: -0.3px;
+        }
+        .pt-header-icon { font-size: 22px; }
+        .pt-close-btn {
+            background: #f3e8ff;
+            border: 1px solid #e9d5ff;
+            color: #7c3aed;
+            font-size: 14px;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .pt-close-btn:hover { background: #e9d5ff; color: #581c87; }
+
+        .pt-scroll {
+            overflow-y: auto;
+            flex: 1;
+            padding: 20px 24px 40px;
+            scrollbar-width: thin;
+            scrollbar-color: #c4b5fd transparent;
+        }
+        .pt-scroll::-webkit-scrollbar { width: 4px; }
+        .pt-scroll::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 4px; }
+
+        .pt-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a78bfa;
+        }
+        .pt-empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .pt-empty-title { font-size: 16px; font-weight: 700; color: #7c3aed; margin-bottom: 8px; }
+        .pt-empty-sub { font-size: 13px; line-height: 1.6; color: #a78bfa; }
+
+        .pt-overview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .pt-pill {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 14px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        .pt-pill-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: #7c3aed;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .pt-pill-lbl {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #a78bfa;
+        }
+
+        .pt-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #a78bfa;
+            margin: 20px 0 10px;
+        }
+
+        .pt-game-cards { display: flex; flex-direction: column; gap: 10px; }
+
+        .pt-game-card {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 16px;
+            padding: 14px 16px;
+            transition: border-color 0.2s;
+        }
+        .pt-game-card:hover { border-color: #c4b5fd; }
+
+        .pt-game-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .pt-game-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #4c1d95;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pt-mode-badge {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #ede9fe;
+            color: #7c3aed;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1px solid #ddd6fe;
+        }
+        .pt-trend {
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .pt-game-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .pt-metric { text-align: center; }
+        .pt-metric-val {
+            font-size: 16px;
+            font-weight: 800;
+            color: #4c1d95;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .pt-metric-lbl {
+            font-size: 10px;
+            color: #a78bfa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pt-sparkline-wrap { position: relative; }
+        .pt-sparkline {
+            width: 100%;
+            height: 36px;
+            display: block;
+        }
+        .pt-sparkline-label {
+            font-size: 10px;
+            color: #c4b5fd;
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        .pt-history { display: flex; flex-direction: column; gap: 8px; }
+
+        .pt-history-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3e8ff;
+        }
+        .pt-history-row:last-child { border-bottom: none; }
+
+        .pt-history-game {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6d28d9;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pt-history-score {
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .pt-bar-track {
+            width: 48px;
+            height: 4px;
+            background: #ede9fe;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .pt-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .pt-history-date {
+            font-size: 10px;
+            color: #c4b5fd;
+            text-align: right;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+        .pt-history-date span { opacity: 0.7; }
+
+        .pt-clear-btn {
+            margin-top: 28px;
+            width: 100%;
+            background: transparent;
+            border: 1px solid #fca5a5;
+            color: #ef4444;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .pt-clear-btn:hover {
+            background: #fef2f2;
+            border-color: #f87171;
+        }
+
+        /* ── Study timer ring ── */
+        .nr-timer-ring {
+            position: relative;
+            width: 56px; height: 56px;
+            flex-shrink: 0;
+        }
+        .nr-timer-ring svg { transform: rotate(-90deg); }
+        .nr-timer-ring circle { fill: none; stroke-width: 4; }
+        .nr-timer-track { stroke: rgba(124,58,237,0.15); }
+        .nr-timer-fill {
+            stroke: #7c3aed;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear;
+        }
+        .nr-timer-num {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: #7c3aed;
+        }
+
+        /* ── Feedback toast ── */
+        .nr-toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-80px);
+            padding: 14px 24px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 700;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 999;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .nr-toast.show { transform: translateX(-50%) translateY(0); }
+        .nr-toast.correct  { background: #d1fae5; color: #065f46; }
+        .nr-toast.incorrect { background: #fee2e2; color: #991b1b; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // Lucide React icons as inline SVG components
+        // ── Lucide icons ──────────────────────────────────────────────────────
         const Brain = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
         );
-
         const RotateCcw = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
         );
-
         const Play = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
         );
+        const ChartBar = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+        );
 
+        // ── ProgressTracker (light theme, separate storage key) ───────────────
+        const ProgressTracker = (() => {
+            const STORAGE_KEY = 'nr_progress_v1'; // separate from face_recall
+
+            function load() {
+                try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+                catch { return []; }
+            }
+            function save(sessions) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+            }
+
+            function record({ game, score, max, mode = '' }) {
+                if (!game || score == null || max == null) return;
+                const sessions = load();
+                sessions.push({ game, score, max, mode, pct: Math.round((score / max) * 100), ts: Date.now() });
+                save(sessions);
+                if (document.getElementById('pt-panel')?.classList.contains('pt-open')) renderPanel();
+            }
+
+            function clearAll() {
+                if (confirm('Clear all progress history? This cannot be undone.')) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    renderPanel();
+                }
+            }
+
+            function computeStats(sessions) {
+                if (!sessions.length) return null;
+                const byGame = {};
+                sessions.forEach(s => { if (!byGame[s.game]) byGame[s.game] = []; byGame[s.game].push(s); });
+                const gameStats = Object.entries(byGame).map(([name, rows]) => {
+                    const pcts = rows.map(r => r.pct);
+                    const avg = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length);
+                    const best = Math.max(...pcts);
+                    const last = rows[rows.length-1];
+                    const recent = pcts.slice(-3), prior = pcts.slice(-6,-3);
+                    let trend = '—';
+                    if (prior.length && recent.length) {
+                        const rAvg = recent.reduce((a,b)=>a+b,0)/recent.length;
+                        const pAvg = prior.reduce((a,b)=>a+b,0)/prior.length;
+                        trend = rAvg > pAvg+5 ? '↑' : rAvg < pAvg-5 ? '↓' : '→';
+                    }
+                    return { name, rows, avg, best, last, trend, count: rows.length };
+                });
+                const allPcts = sessions.map(s=>s.pct);
+                const overallAvg = Math.round(allPcts.reduce((a,b)=>a+b,0)/allPcts.length);
+                const streak = computeStreak(sessions);
+                return { gameStats, overallAvg, totalSessions: sessions.length, streak };
+            }
+
+            function computeStreak(sessions) {
+                if (!sessions.length) return 0;
+                const days = new Set(sessions.map(s=>new Date(s.ts).toDateString()));
+                let streak = 0;
+                const d = new Date();
+                while (days.has(d.toDateString())) { streak++; d.setDate(d.getDate()-1); }
+                return streak;
+            }
+
+            function sparklinePath(values, w, h) {
+                if (values.length < 2) return '';
+                const xStep = w / (values.length-1);
+                const pts = values.map((v,i) => `${i*xStep},${h-((v/100)*h)}`);
+                return 'M'+pts.join('L');
+            }
+
+            function formatDate(ts) { return new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+            function formatTime(ts) { return new Date(ts).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+
+            function renderPanel() {
+                const panel = document.getElementById('pt-panel');
+                if (!panel) return;
+                const sessions = load();
+                const stats = computeStats(sessions);
+
+                if (!stats) {
+                    panel.querySelector('.pt-body').innerHTML = `
+                        <div class="pt-empty">
+                            <div class="pt-empty-icon">🎮</div>
+                            <div class="pt-empty-title">No games played yet</div>
+                            <div class="pt-empty-sub">Complete a round to start tracking your progress.</div>
+                        </div>`;
+                    return;
+                }
+
+                const gameCardsHtml = stats.gameStats.map(g => {
+                    const sparkW=120, sparkH=36;
+                    const recentPcts = g.rows.slice(-20).map(r=>r.pct);
+                    const path = sparklinePath(recentPcts, sparkW, sparkH);
+                    const trendColor = g.trend==='↑'?'#10b981':g.trend==='↓'?'#f87171':'#94a3b8';
+                    const avgColor = g.avg>=80?'#10b981':g.avg>=50?'#f59e0b':'#f87171';
+                    return `
+                    <div class="pt-game-card">
+                        <div class="pt-game-header">
+                            <div class="pt-game-name">${g.name}</div>
+                            <div class="pt-trend" style="color:${trendColor}">${g.trend}</div>
+                        </div>
+                        <div class="pt-game-metrics">
+                            <div class="pt-metric">
+                                <div class="pt-metric-val" style="color:${avgColor}">${g.avg}%</div>
+                                <div class="pt-metric-lbl">avg</div>
+                            </div>
+                            <div class="pt-metric">
+                                <div class="pt-metric-val">${g.best}%</div>
+                                <div class="pt-metric-lbl">best</div>
+                            </div>
+                            <div class="pt-metric">
+                                <div class="pt-metric-val">${g.count}</div>
+                                <div class="pt-metric-lbl">played</div>
+                            </div>
+                            <div class="pt-metric">
+                                <div class="pt-metric-val">${g.last.score}/${g.last.max}</div>
+                                <div class="pt-metric-lbl">last</div>
+                            </div>
+                        </div>
+                        <div class="pt-sparkline-wrap">
+                            <svg viewBox="0 0 ${sparkW} ${sparkH}" class="pt-sparkline" preserveAspectRatio="none">
+                                <path d="${path}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                                <path d="${path}L${sparkW},${sparkH}L0,${sparkH}Z" fill="url(#pt-grad)" opacity="0.18"/>
+                                <defs>
+                                    <linearGradient id="pt-grad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#7c3aed"/>
+                                        <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="pt-sparkline-label">last ${recentPcts.length} sessions</div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                const recent = sessions.slice(-10).reverse();
+                const historyHtml = recent.map(s => {
+                    const pctColor = s.pct>=80?'#10b981':s.pct>=50?'#f59e0b':'#f87171';
+                    const bar = `<div class="pt-bar-track"><div class="pt-bar-fill" style="width:${s.pct}%;background:${pctColor}"></div></div>`;
+                    return `
+                    <div class="pt-history-row">
+                        <div class="pt-history-game">${s.game}</div>
+                        <div class="pt-history-score" style="color:${pctColor}">${s.score}/${s.max}</div>
+                        ${bar}
+                        <div class="pt-history-date">${formatDate(s.ts)}<br><span>${formatTime(s.ts)}</span></div>
+                    </div>`;
+                }).join('');
+
+                panel.querySelector('.pt-body').innerHTML = `
+                    <div class="pt-overview">
+                        <div class="pt-pill">
+                            <div class="pt-pill-val">${stats.totalSessions}</div>
+                            <div class="pt-pill-lbl">Total Rounds</div>
+                        </div>
+                        <div class="pt-pill">
+                            <div class="pt-pill-val">${stats.overallAvg}%</div>
+                            <div class="pt-pill-lbl">Overall Avg</div>
+                        </div>
+                        <div class="pt-pill">
+                            <div class="pt-pill-val">${stats.streak}🔥</div>
+                            <div class="pt-pill-lbl">Day Streak</div>
+                        </div>
+                    </div>
+                    <div class="pt-section-title">Performance</div>
+                    <div class="pt-game-cards">${gameCardsHtml}</div>
+                    <div class="pt-section-title">Recent Sessions</div>
+                    <div class="pt-history">${historyHtml}</div>
+                    <button class="pt-clear-btn" onclick="NRProgressTracker.clearAll()">🗑 Clear all history</button>
+                `;
+            }
+
+            function injectDOM() {
+                if (document.getElementById('pt-panel')) return;
+                const panel = document.createElement('div');
+                panel.id = 'pt-panel';
+                panel.innerHTML = `
+                    <div class="pt-backdrop" onclick="NRProgressTracker.close()"></div>
+                    <div class="pt-drawer">
+                        <div class="pt-header">
+                            <div class="pt-header-title">
+                                <span class="pt-header-icon">📈</span>
+                                Progress
+                            </div>
+                            <button class="pt-close-btn" onclick="NRProgressTracker.close()">✕</button>
+                        </div>
+                        <div class="pt-body pt-scroll"></div>
+                    </div>
+                `;
+                document.body.appendChild(panel);
+            }
+
+            function open() {
+                injectDOM();
+                renderPanel();
+                requestAnimationFrame(() => {
+                    document.getElementById('pt-panel').classList.add('pt-open');
+                });
+            }
+
+            function close() {
+                document.getElementById('pt-panel')?.classList.remove('pt-open');
+            }
+
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+            return { record, open, close, clearAll };
+        })();
+
+        // Expose globally so the drawer's inline onclick can reach it
+        window.NRProgressTracker = ProgressTracker;
+
+        // ── Main game component ───────────────────────────────────────────────
         function MemoryExercise() {
             const [gameState, setGameState] = useState('menu');
             const [sequence, setSequence] = useState([]);
             const [currentRecallStep, setCurrentRecallStep] = useState(0);
             const [userInput, setUserInput] = useState('');
-            const [feedback, setFeedback] = useState(null);
             const [userAnswers, setUserAnswers] = useState([]);
             const [score, setScore] = useState({ correct: 0, total: 0 });
             const [recallPattern, setRecallPattern] = useState([]);
+            const [timerSeconds, setTimerSeconds] = useState(3);
+            const timerRef = useRef(null);
+            const toastTimerRef = useRef(null);
+            const CIRCUMFERENCE = 2 * Math.PI * 24;
+
+            const showToast = (msg, type) => {
+                const t = document.getElementById('nr-toast');
+                if (!t) return;
+                clearTimeout(toastTimerRef.current);
+                t.textContent = msg;
+                t.className = `nr-toast ${type} show`;
+                toastTimerRef.current = setTimeout(() => t.classList.remove('show'), 1600);
+            }; // 150.8
+
+            // Run countdown timer during 'showing' phase
+            useEffect(() => {
+                if (gameState === 'showing') {
+                    setTimerSeconds(3);
+                    let t = 3;
+                    timerRef.current = setInterval(() => {
+                        t--;
+                        setTimerSeconds(t);
+                        if (t <= 0) {
+                            clearInterval(timerRef.current);
+                            setGameState('recalling');
+                        }
+                    }, 1000);
+                }
+                return () => clearInterval(timerRef.current);
+            }, [gameState]);
 
             const generateRecallPattern = () => {
-                // Generate randomized recall pattern with 10 total recalls
-                // First 5: positions 0, 1, 2, 3, 4 (in order)
-                const pattern = [0, 1, 2, 3, 4];
-                
-                // Remaining 7 recalls: randomly select from all positions
-                const remainingRecalls = 5;
-                for (let i = 0; i < remainingRecalls; i++) {
-                    const randomPosition = Math.floor(Math.random() * 5);
-                    pattern.push(randomPosition);
+                const pattern = [0,1,2,3,4];
+                for (let i = 0; i < 5; i++) {
+                    pattern.push(Math.floor(Math.random() * 5));
                 }
-                
                 return pattern;
             };
 
@@ -68,53 +616,49 @@
                 setCurrentRecallStep(0);
                 setUserAnswers([]);
                 setScore({ correct: 0, total: 0 });
-                setFeedback(null);
                 setGameState('showing');
-                
-                setTimeout(() => {
-                    setGameState('recalling');
-                }, 3000);
             };
 
             const handleSubmit = (e) => {
                 e.preventDefault();
-                
                 const targetPosition = recallPattern[currentRecallStep];
                 const correctNumber = sequence[targetPosition];
                 const isCorrect = parseInt(userInput) === correctNumber;
-                
-                setScore(prev => ({
-                    correct: prev.correct + (isCorrect ? 1 : 0),
-                    total: prev.total + 1
-                }));
-                
-                setUserAnswers(prev => [...prev, {
+
+                const newScore = {
+                    correct: score.correct + (isCorrect ? 1 : 0),
+                    total: score.total + 1
+                };
+                setScore(newScore);
+
+                const newAnswers = [...userAnswers, {
                     recallStep: currentRecallStep,
-                    targetPosition: targetPosition,
+                    targetPosition,
                     userAnswer: parseInt(userInput),
                     correctAnswer: correctNumber,
                     isCorrect
-                }]);
-                
-                setFeedback({
-                    isCorrect,
-                    correctNumber,
-                    userAnswer: parseInt(userInput),
-                    position: targetPosition + 1
-                });
-                
+                }];
+                setUserAnswers(newAnswers);
+
+                if (isCorrect) {
+                    showToast('✓ Correct!', 'correct');
+                } else {
+                    showToast(`✗ Incorrect — position ${targetPosition + 1} was ${correctNumber}`, 'incorrect');
+                }
+
                 setUserInput('');
-                
-                // Longer delay for incorrect answers to allow processing
+
                 const delay = isCorrect ? 1000 : 2500;
-                
                 setTimeout(() => {
-                    setFeedback(null);
                     const nextStep = currentRecallStep + 1;
-                    
                     if (nextStep < recallPattern.length) {
                         setCurrentRecallStep(nextStep);
                     } else {
+                        ProgressTracker.record({
+                            game: 'Number Recall',
+                            score: newScore.correct,
+                            max: newScore.total
+                        });
                         setGameState('completed');
                     }
                 }, delay);
@@ -125,7 +669,6 @@
                 setSequence([]);
                 setCurrentRecallStep(0);
                 setUserInput('');
-                setFeedback(null);
                 setUserAnswers([]);
                 setScore({ correct: 0, total: 0 });
             };
@@ -133,11 +676,14 @@
             return (
                 <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-2 sm:p-4">
                     <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 w-full max-w-full sm:max-w-md mx-2 sm:mx-4">
+
+                        {/* Header */}
                         <div className="flex items-center justify-center mb-4 sm:mb-6">
                             <Brain className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-purple-600 mr-2 sm:mr-3" />
                             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">Number Recall Trainer</h1>
                         </div>
 
+                        {/* ── Menu ── */}
                         {gameState === 'menu' && (
                             <div className="text-center">
                                 <h2 className="text-lg sm:text-xl font-semibold text-purple-600 mb-3 sm:mb-4">
@@ -147,15 +693,15 @@
                                     <p className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">How it works:</p>
                                     <ol className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                                         <li className="flex">
-                                            <span className="font-bold text-purple-600 mr-2">👀 </span>
-                                            <span>Study <strong>5 digits</strong> - memorize digits AND their position for 3 seconds </span>
-                                         </li>
+                                            <span className="font-bold text-purple-600 mr-2">👀</span>
+                                            <span>Study <strong>5 digits</strong> — memorize digits AND their position for 3 seconds</span>
+                                        </li>
                                         <li className="flex">
-                                            <span className="font-bold text-purple-600 mr-2">🤔 </span>
+                                            <span className="font-bold text-purple-600 mr-2">🤔</span>
                                             <span>Recall <strong>both the digits AND their positions</strong></span>
                                         </li>
                                         <li className="flex">
-                                            <span className="font-bold text-purple-600 mr-2">🏆 </span>
+                                            <span className="font-bold text-purple-600 mr-2">🏆</span>
                                             <span>Score out of <strong>10 times</strong> — see how many you remember in a randomized pattern</span>
                                         </li>
                                     </ol>
@@ -170,16 +716,32 @@
                             </div>
                         )}
 
+                        {/* ── Showing digits ── */}
                         {gameState === 'showing' && (
                             <div>
-                                <div className="text-center text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-                                    Memorize these digits AND their positions...
+                                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                                    <div className="text-xs sm:text-sm text-gray-600">
+                                        Memorize these digits AND their positions...
+                                    </div>
+                                    {/* Timer ring — face_recall animation, number recall purple */}
+                                    <div className="nr-timer-ring">
+                                        <svg width="56" height="56" viewBox="0 0 56 56">
+                                            <circle className="nr-timer-track" cx="28" cy="28" r="24"/>
+                                            <circle
+                                                className="nr-timer-fill"
+                                                cx="28" cy="28" r="24"
+                                                strokeDasharray={CIRCUMFERENCE}
+                                                strokeDashoffset={CIRCUMFERENCE * (1 - timerSeconds / 3)}
+                                            />
+                                        </svg>
+                                        <div className="nr-timer-num">{timerSeconds}</div>
+                                    </div>
                                 </div>
                                 <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 sm:p-6 md:p-8">
                                     <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
                                         {sequence.map((digit, index) => (
                                             <div key={index} className="flex flex-col items-center">
-                                                <div className="text-[10px] sm:text-xs text-purple-600 font-semibold mb-1">Pos {index + 1}</div>
+                                                <div className="text-[10px] sm:text-xs text-purple-600 font-semibold mb-1">Pos {index+1}</div>
                                                 <div className="w-12 h-16 sm:w-14 sm:h-18 md:w-16 md:h-20 bg-white rounded-lg shadow-lg flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-bold text-purple-600">
                                                     {digit}
                                                 </div>
@@ -187,20 +749,18 @@
                                         ))}
                                     </div>
                                 </div>
-                                <div className="text-center text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
-                                    Watch carefully...
-                                </div>
                             </div>
                         )}
 
+                        {/* ── Recalling ── */}
                         {gameState === 'recalling' && (
                             <div>
                                 <div className="text-center mb-4 sm:mb-6">
                                     <div className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2">
-                                        Recall step {currentRecallStep + 1} of 10
+                                        Recall step {currentRecallStep+1} of 10
                                     </div>
                                     <div className="text-base sm:text-lg font-semibold text-purple-600 mb-1 sm:mb-2">
-                                        Enter the digit from position {recallPattern[currentRecallStep] + 1}
+                                        Enter the digit from position {recallPattern[currentRecallStep]+1}
                                     </div>
                                     <div className="text-xs sm:text-sm text-gray-500">
                                         Score: {score.correct} / {score.total}
@@ -214,21 +774,18 @@
                                             const isCurrentTarget = recallPattern[currentRecallStep] === index;
                                             const correctCount = answers.filter(a => a.isCorrect).length;
                                             const totalCount = answers.length;
-                                            
                                             return (
                                                 <div key={index} className="flex flex-col items-center">
-                                                    <div className="text-[10px] sm:text-xs text-purple-600 font-semibold mb-1">Pos {index + 1}</div>
-                                                    <div
-                                                        className={`w-12 h-16 sm:w-14 sm:h-18 md:w-16 md:h-20 rounded-lg flex items-center justify-center text-base sm:text-lg md:text-xl font-bold border-2 ${
-                                                            isCurrentTarget
-                                                                ? 'bg-purple-100 border-purple-400 border-dashed animate-pulse'
-                                                                : totalCount > 0
-                                                                ? correctCount === totalCount
-                                                                    ? 'bg-green-100 border-green-400 text-green-700'
-                                                                    : 'bg-red-100 border-red-400 text-red-700'
-                                                                : 'bg-gray-100 border-gray-300'
-                                                        }`}
-                                                    >
+                                                    <div className="text-[10px] sm:text-xs text-purple-600 font-semibold mb-1">Pos {index+1}</div>
+                                                    <div className={`w-12 h-16 sm:w-14 sm:h-18 md:w-16 md:h-20 rounded-lg flex items-center justify-center text-base sm:text-lg md:text-xl font-bold border-2 ${
+                                                        isCurrentTarget
+                                                            ? 'bg-purple-100 border-purple-400 border-dashed animate-pulse'
+                                                            : totalCount > 0
+                                                            ? correctCount === totalCount
+                                                                ? 'bg-green-100 border-green-400 text-green-700'
+                                                                : 'bg-red-100 border-red-400 text-red-700'
+                                                            : 'bg-gray-100 border-gray-300'
+                                                    }`}>
                                                         {totalCount > 0 ? `${correctCount}/${totalCount}` : isCurrentTarget ? '?' : ''}
                                                     </div>
                                                 </div>
@@ -256,26 +813,14 @@
                                         </button>
                                     </form>
                                 </div>
-
-                                {feedback && (
-                                    <div className={`text-center p-3 sm:p-4 rounded-lg ${feedback.isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {feedback.isCorrect ? (
-                                            <div className="font-semibold text-sm sm:text-base">✓ Correct!</div>
-                                        ) : (
-                                            <div>
-                                                <div className="font-semibold text-sm sm:text-base">✗ Incorrect</div>
-                                                <div className="text-xs sm:text-sm">The digit in position {feedback.position} was: {feedback.correctNumber}</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
                             </div>
                         )}
 
+                        {/* ── Completed ── */}
                         {gameState === 'completed' && (
                             <div className="text-center">
                                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Round Complete!</h2>
-                                
+
                                 <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
                                     <div className="text-4xl sm:text-5xl font-bold text-purple-600 mb-2">
                                         {score.correct} / {score.total}
@@ -283,7 +828,7 @@
                                     <div className="text-gray-700 mb-3 sm:mb-4 text-sm sm:text-base">
                                         {Math.round((score.correct / score.total) * 100)}% accuracy
                                     </div>
-                                    
+
                                     <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-purple-200">
                                         <div className="text-xs sm:text-sm text-gray-600 mb-2">The sequence was:</div>
                                         <div className="flex justify-center gap-1.5 sm:gap-2">
@@ -298,14 +843,24 @@
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <button
-                                    onClick={resetGame}
-                                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg flex items-center justify-center mx-auto transition-colors text-sm sm:text-base"
-                                >
-                                    <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                                    New Round
-                                </button>
+
+                                {/* Action buttons */}
+                                <div className="flex gap-3 justify-center">
+                                    <button
+                                        onClick={resetGame}
+                                        className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 sm:py-3 px-5 sm:px-6 rounded-lg flex items-center justify-center transition-colors text-sm sm:text-base"
+                                    >
+                                        <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                        New Round
+                                    </button>
+                                    <button
+                                        onClick={() => ProgressTracker.open()}
+                                        className="bg-white hover:bg-purple-50 text-purple-600 font-semibold py-2.5 sm:py-3 px-5 sm:px-6 rounded-lg flex items-center justify-center transition-colors text-sm sm:text-base border-2 border-purple-300 hover:border-purple-400"
+                                    >
+                                        <ChartBar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                        Stats
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -315,5 +870,6 @@
 
         ReactDOM.render(<MemoryExercise />, document.getElementById('root'));
     </script>
+    <div id="nr-toast" class="nr-toast"></div>
 </body>
 </html>
